@@ -39,61 +39,53 @@ root = tree.getroot()
 
 def recursive_IRC_match(supp_str:list, supp_idx_start:int,
                         xml_str:list, xml_idx_start:int) -> bool:
-    if supp_idx_start >= len(supp_str) or xml_idx_start >= len(xml_str):
-        return False
-
     supp_idx = supp_idx_start
     xml_idx = xml_idx_start
 
-    while supp_idx < len(supp_str) and \
-        xml_idx < len(xml_str) and \
-        supp_str[supp_idx] == xml_str[xml_idx]:
-        supp_idx += 1
-        xml_idx += 1
-    if supp_idx == len(supp_str) and xml_idx == len(xml_str):
-        return True # reached end with matching
-    if supp_idx == len(supp_str)-1 and supp_str[supp_idx] in ["....", "…", "..."]:
-        return True # reached end, with ellipses in supp taking us to the end
-    if supp_idx >= len(supp_str) or xml_idx >= len(xml_str):
-        return False # we've gone beyond the end of one but not the other
-    if supp_str[supp_idx] in ["…", "...", "....", "…."]:
-        for i in range(xml_idx+1, len(xml_str)):
-            if supp_str[supp_idx+1] == xml_str[i]: # try the next match
-                success = recursive_IRC_match(supp_str, supp_idx+1, xml_str, i)
+    while True:  # main loop to advance as far as possible
+        if supp_idx == len(supp_str) and xml_idx == len(xml_str):
+            return True # then we have matched
+        elif supp_idx == len(supp_str) or xml_idx == len(xml_str):
+            return False # then only one matched
+        if supp_str[supp_idx] == xml_str[xml_idx]: # exact match => advance both
+            supp_idx += 1
+            xml_idx += 1
+        elif supp_str[supp_idx:supp_idx+2] == ". " and xml_str[xml_idx:xml_idx+1] == " ":
+            supp_idx += 1 # handle the mysterious missing periods in XML version
+        elif supp_str[supp_idx:supp_idx+1].isspace(): # advance over extra spaces added
+            supp_idx += 1
+        # elif supp_str[supp_idx] == "[" and supp_str[supp_idx+1:supp_idx+2] != "]":
+        #     # handle comments by advancing until the end of the comment
+        #     idx_supp_open_bracket = supp_idx
+        #     supp_idx += 2 # advance two, since we
+        #     while supp_idx < len(supp_str) and supp_str[supp_idx] != "]":
+        #         supp_idx += 1
+        #     if supp_idx == len(supp_str):
+        #         print("Failure due to mismatched comments, starting at", supp_str[idx_supp_open_bracket-5:idx_supp_open_bracket+5])
+        #         return False
+        #     assert supp_str[supp_idx] == "]"
+        #     supp_idx += 1 # skip over the ]
+        #     if supp_idx < len(supp_str) and supp_str[supp_idx].isspace(): # skip over any subsequent space
+        #         supp_idx += 1
+        else:
+            break # then we need to consider the next possibilities
+
+    # skip over ellipses and other equivalents
+    ellipsis_equiv_tried = False
+    for ellipsis_equiv in ["…"]: # , "...", "[]"]:
+        if supp_str[supp_idx:supp_idx+len(ellipsis_equiv)] == ellipsis_equiv:
+            ellipsis_equiv_tried = True
+            for i in range(xml_idx+2, len(xml_str)+1):
+                success = recursive_IRC_match(supp_str, supp_idx+len(ellipsis_equiv),
+                                              xml_str, i)
                 if success:
                     return True
-    if supp_str[supp_idx:supp_idx+2] == ". ": # handle the mysterious missing periods in XML version
-        success = recursive_IRC_match(supp_str, supp_idx+1, xml_str, xml_idx)
-        if success:
-            return success
-    if supp_str[supp_idx] == "[" and supp_str[supp_idx+1:supp_idx+2] != "]": # handle comments
-        while True:
-            supp_idx +=1
-            if supp_idx >= len(supp_str):
-                return False
-            if supp_str[supp_idx] == "]":
-                supp_idx +=1 # advance to beyond the first comment
-                break
-        if supp_idx < len(supp_str):
-            success = recursive_IRC_match(supp_str, supp_idx, xml_str, xml_idx)
-            if success:
-                return success
-    # if supp_idx < len(supp_str) and \
-    #         supp_str[supp_idx] == " ": # advance over whitespace
-    #     success = recursive_IRC_match(supp_str, supp_idx+1, xml_str, xml_idx)
-    #     if success:
-    #         return success
-    # if xml_idx < len(xml_str) and \
-    #         xml_str[xml_idx] == " ": # advance over whitespace
-    #     success = recursive_IRC_match(supp_str, supp_idx, xml_str, xml_idx+1)
-    #     if success:
-    #         return success
 
-    if supp_idx > supp_idx_start+10:
-        print("Problems started at: ")
-        print("Supp: ", supp_str[max(0, supp_idx-5): supp_idx], " +++ ",
+    if ellipsis_equiv_tried or supp_idx > supp_idx_start+10:
+        print("Problems (", ellipsis_equiv_tried, (supp_idx-supp_idx_start), ") started at: ")
+        print("Supp {:5d}: ".format(supp_idx), supp_str[max(0, supp_idx-5): supp_idx], "+++",
              supp_str[supp_idx:min(len(supp_str), supp_idx+40)])
-        print("XML : ", xml_str[max(0, xml_idx-5): xml_idx], " +++ ",
+        print("XML  {:5d}: ".format(xml_idx), xml_str[max(0, xml_idx-5): xml_idx], "+++",
               xml_str[xml_idx:min(len(xml_str), xml_idx+40)])
 
     return False # we couldn't find a good match
@@ -125,6 +117,9 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
     supp_str = ""
     for i in range(1, len(in_lines)):
         supp_str += in_lines[i] + " "
+    supp_str = supp_str.replace("...", "…") # standardize ellipses
+    supp_str = supp_str.replace("[]]", "…") # standardize [] into an ellipse (equivalent!)
+    supp_str = re.sub("[[][^\]]+[\]]", "", supp_str) # remove comments
     supp_str = " ".join(supp_str.split()) # normalize whitespace
 
     result = recursive_IRC_match(supp_str, 0, xml_str, 0) # actual function call
