@@ -11,7 +11,7 @@ ns = {"usc" : usc_ns_str}
 
 hyphen_lookalikes_re = re.compile(r"[—–]") # em-dashes and en-dashes
 def standardize(s:str) -> str:
-    return " ".join(hyphen_lookalikes_re.sub("-", s).split())
+    return " ".join(hyphen_lookalikes_re.sub("-", s).replace("--", "-").replace("“", "\"").replace("”", "\"").split())
 
 # Gets all non-header text from NON-repealed sections
 def get_IRC_text_recursive(x:ET.Element, top_level = True) -> str:
@@ -38,7 +38,7 @@ root = tree.getroot()
 
 
 def recursive_IRC_match(supp_str:list, supp_idx_start:int,
-                        xml_str:list, xml_idx_start:int) -> bool:
+                        xml_str:list, xml_idx_start:int, top_level=True) -> bool:
     supp_idx = supp_idx_start
     xml_idx = xml_idx_start
 
@@ -52,8 +52,12 @@ def recursive_IRC_match(supp_str:list, supp_idx_start:int,
             xml_idx += 1
         elif supp_str[supp_idx:supp_idx+2] == ". " and xml_str[xml_idx:xml_idx+1] == " ":
             supp_idx += 1 # handle the mysterious missing periods in XML version
+        # elif supp_str[supp_idx:supp_idx+2] == ", " and xml_str[xml_idx:xml_idx+3] == " , ":
+        #     xml_idx += 1 # handle the mysterious extra space before commas in the XML
         elif supp_str[supp_idx:supp_idx+1].isspace(): # advance over extra spaces added
             supp_idx += 1
+        elif xml_str[xml_idx:xml_idx+1].isspace(): # advance over extra spaces added
+            xml_idx += 1
         # elif supp_str[supp_idx] == "[" and supp_str[supp_idx+1:supp_idx+2] != "]":
         #     # handle comments by advancing until the end of the comment
         #     idx_supp_open_bracket = supp_idx
@@ -70,29 +74,37 @@ def recursive_IRC_match(supp_str:list, supp_idx_start:int,
         else:
             break # then we need to consider the next possibilities
 
-    # skip over ellipses and other equivalents
-    ellipsis_equiv_tried = False
-    for ellipsis_equiv in ["…"]: # , "...", "[]"]:
-        if supp_str[supp_idx:supp_idx+len(ellipsis_equiv)] == ellipsis_equiv:
-            ellipsis_equiv_tried = True
-            for i in range(xml_idx+2, len(xml_str)+1):
-                success = recursive_IRC_match(supp_str, supp_idx+len(ellipsis_equiv),
-                                              xml_str, i)
-                if success:
-                    return True
+    # skip over ellipses
+    ellipses_tried = False
+    if supp_str[supp_idx:supp_idx+1] == "…":
+        ellipses_tried = True
+        supp_idx += 1 # skip over ellipsis
+        if supp_str[supp_idx:supp_idx+1].isspace():
+            supp_idx += 1 # skip over spaces after ellipses
+        if supp_str[supp_idx:].startswith("(3) any deduction provided in sectio"):
+            print("here")
+        for i in range(xml_idx+2, len(xml_str)+1):
+            if xml_str[i:].startswith("(3) any deduction provided in sectio"):
+                print("here")
+            success = recursive_IRC_match(supp_str, supp_idx, xml_str, i, False)
+            if success:
+                return True
 
-    if ellipsis_equiv_tried or supp_idx > supp_idx_start+10:
-        print("Problems (", ellipsis_equiv_tried, (supp_idx-supp_idx_start), ") started at: ")
-        print("Supp {:5d}: ".format(supp_idx), supp_str[max(0, supp_idx-5): supp_idx], "+++",
+    if ellipses_tried or supp_idx > supp_idx_start+10 or top_level:
+        print("Problems started (ellipses_tried=", ellipses_tried, "dist=", (supp_idx-supp_idx_start), ")")
+        print("Supp {:5d}: ".format(supp_idx), supp_str[max(0, supp_idx-15): supp_idx], "+++",
              supp_str[supp_idx:min(len(supp_str), supp_idx+40)])
-        print("XML  {:5d}: ".format(xml_idx), xml_str[max(0, xml_idx-5): xml_idx], "+++",
+        print("XML  {:5d}: ".format(xml_idx), xml_str[max(0, xml_idx-15): xml_idx], "+++",
               xml_str[xml_idx:min(len(xml_str), xml_idx+40)])
 
     return False # we couldn't find a good match
 
 
 def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
-    print("Section:", sec_num)
+    # if sec_num != "1341": # for debug
+    #     return
+
+    print("-----------------------------------\nSection:", sec_num)
     irc_sec = None
     for s in root.iter('{' + usc_ns_str + '}section'):
         if "identifier" in s.attrib and \
@@ -111,15 +123,15 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
 
     # Check the text
     xml_str = standardize(get_IRC_text_recursive(irc_sec))
-    # print("Raw XML:", ET.tostring(irc_sec))
-    # print("XML text: ", re.sub("\n\\s*\n", "\n", xml_str))
+    # print("Raw XML:", ET.tostring(irc_sec)) # useful for debug
+    # print("XML text: ", re.sub("\n\\s*\n", "\n", xml_str)) # useful for debug
     xml_str = " ".join(xml_str.split()) # normalize whitespace
     supp_str = ""
     for i in range(1, len(in_lines)):
         supp_str += in_lines[i] + " "
     supp_str = supp_str.replace("...", "…") # standardize ellipses
     supp_str = supp_str.replace("[]]", "…") # standardize [] into an ellipse (equivalent!)
-    supp_str = re.sub("[[][^\]]+[\]]", "", supp_str) # remove comments
+    supp_str = re.sub("(\[)([^\]]+)(\])", "", supp_str) # remove comments
     supp_str = " ".join(supp_str.split()) # normalize whitespace
 
     result = recursive_IRC_match(supp_str, 0, xml_str, 0) # actual function call
@@ -128,7 +140,10 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
     else:
         print("SUCCESS")
 
-
+special_treatment_starts = ["Chapter",
+                            "Revenue Procedure 2021-45",
+                            "§ 3.16 Standard Deduction",
+                            "§ 3.17."]
 
 # This manages the work of verifying that the title and text matches
 def check_lines(in_lines):
@@ -140,8 +155,7 @@ def check_lines(in_lines):
     if sec_num[-1] == ".":
         sec_num = sec_num[:-1] # remove the period if present
 
-    if lines[0].startswith("§ 3.16 Standard Deduction") or \
-            lines[0].startswith("§ 3.17."):
+    if True in [lines[0].startswith(s) for s in special_treatment_starts]:
         print("Special treatment")
     elif "-" in sec_num:
         print("CFR")
@@ -152,9 +166,12 @@ def check_lines(in_lines):
 
 f = open("Code & Regs.txt", "r") # Load the file
 
-current_in_lines = None # Don't store anything
-for l in f.readlines():
-    if l[0] == "§":  # Found a start of a section
+
+current_in_lines = None # Don't store anything until we find a section
+for idx_l, l in enumerate(f.readlines()):
+
+    if l[0] == "§" or True in [l.startswith(s) for s in special_treatment_starts]:  # Found a start of a section
+        print("----- At Line", idx_l)
         if current_in_lines is not None:
             check_lines(current_in_lines) # process prior section
         current_in_lines = [l] # reset and start gathering
