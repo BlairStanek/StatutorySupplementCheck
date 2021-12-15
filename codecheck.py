@@ -66,7 +66,7 @@ def recursive_IRC_match(supp_str:str, supp_idx_start:int,
             return True # then we have matched
         elif supp_idx == len(supp_str) or xml_idx == len(xml_str):
             return False # then only one matched
-        if supp_str[supp_idx].lower() == xml_str[xml_idx].lower(): # exact match => advance both
+        if supp_str[supp_idx] == xml_str[xml_idx]: # exact match => advance both
             supp_idx += 1
             xml_idx += 1
         elif supp_str[supp_idx:supp_idx+2] == ". " and xml_str[xml_idx:xml_idx+1] == " ":
