@@ -37,16 +37,12 @@ tree = ET.parse("usc26.xml")
 root = tree.getroot()
 
 count_recursive_calls = 0
-stored_results = {}
 
 def recursive_IRC_match(supp_str:str, supp_idx_start:int,
-                        xml_str:str, xml_idx_start:int) -> bool:
+                        xml_str:str, xml_idx_start:int, stored_results:dict) -> bool:
     # if supp_idx_start == 1977 and xml_idx_start == 55054:
     #     print("KAZAA")
     global count_recursive_calls
-    global stored_results
-    # if len(stored_results) % 1000 == 0:
-    #     print("len(stored_results)=", len(stored_results))
     count_recursive_calls += 1
     # if count_recursive_calls % 1000 == 0:
     #     print("{:10d}  {:10d}  {:10d}".format(count_recursive_calls, supp_idx_start, xml_idx_start))
@@ -101,8 +97,7 @@ def recursive_IRC_match(supp_str:str, supp_idx_start:int,
         for i in range(xml_idx+2, len(xml_str)+1): # we consider the end of string, hence the +1
             relevant_tuple = (supp_idx, i)
             if relevant_tuple not in stored_results:
-                # print(relevant_tuple, "not in stored_results")
-                success = recursive_IRC_match(supp_str, supp_idx, xml_str, i)
+                success = recursive_IRC_match(supp_str, supp_idx, xml_str, i, stored_results)
                 stored_results[relevant_tuple] = success
             assert relevant_tuple in stored_results, "Should have been handled"
             if stored_results[relevant_tuple] == True:
@@ -114,11 +109,10 @@ def find_error(supp_str:str, xml_str:str):
     idx_known_bad = len(supp_str) # we know full is not a good match
     idx_known_good = 0 # we know zero will be a good match
     while idx_known_good < idx_known_bad-1:
-        print("idx_known_good=", idx_known_good, " idx_known_bad=",idx_known_bad)
+        print("Searching for Error,  idx_known_good=", idx_known_good, " idx_known_bad=",idx_known_bad)
         idx_to_try = int((idx_known_good+idx_known_bad)/2) # basically binary search
-        global stored_results
         stored_results = {}
-        success = recursive_IRC_match(supp_str[:idx_to_try]+"…", 0, xml_str, 0)
+        success = recursive_IRC_match(supp_str[:idx_to_try]+"…", 0, xml_str, 0, stored_results)
         if success:
             idx_known_good = idx_to_try
         else:
@@ -166,9 +160,8 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
         supp_str = supp_str[:-1].strip()
 
     count_recursive_calls = 0
-    global stored_results
     stored_results = {}
-    result = recursive_IRC_match(supp_str, 0, xml_str, 0) # actual function call
+    result = recursive_IRC_match(supp_str, 0, xml_str, 0, stored_results) # actual function call
     if not result:
         print("FAILURE")
         find_error(supp_str, xml_str)
