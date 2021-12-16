@@ -4,13 +4,14 @@
 
 import xml.etree.ElementTree as ET
 import re
-import irc
-import utils
+import irc, treasregs, utils
 
 special_treatment_starts = ["Chapter",
+                            "State and Local Bond Interest",
                             "Revenue Procedure 2021-45",
                             "§ 3.16 Standard Deduction",
-                            "§ 3.17."]
+                            "§ 3.17.",
+                            "Prop. Reg."]  # alas, proposed regs aren't in the CFR
 
 # This manages the work of verifying that the title and text matches
 def check_lines(in_lines):
@@ -25,7 +26,7 @@ def check_lines(in_lines):
     if True in [lines[0].startswith(s) for s in special_treatment_starts]:
         print("Special treatment")
     elif "-" in sec_num:
-        print("CFR")
+        treasregs.check_TreasReg(sec_num, supp_title_text, lines)
     else:
         irc.check_IRC(sec_num, supp_title_text, lines)
 
