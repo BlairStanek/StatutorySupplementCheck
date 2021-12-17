@@ -29,9 +29,9 @@ def check_lines(in_lines:list, perf_data:list):
     elif "-" in sec_num:
         perf_tuple = treasregs.check_TreasReg(sec_num, supp_title_text, lines)
         perf_data.append((sec_num, perf_tuple))
-    # else:
-    #     perf_tuple = irc.check_IRC(sec_num, supp_title_text, lines)
-    #     perf_data.append((sec_num, perf_tuple))
+    else:
+        perf_tuple = irc.check_IRC(sec_num, supp_title_text, lines)
+        perf_data.append((sec_num, perf_tuple))
 
 
 f = open("Code & Regs.txt", "r") # Load the file

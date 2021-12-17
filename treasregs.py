@@ -45,7 +45,7 @@ debug_call_info = []
 # number of dynamic programming entries, number of ellipses
 def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int, int, int):
 
-    if not sec_num.startswith("1.263(a)-"):
+    if  sec_num.startswith("1.263(a)-"):
         print("SECTION TOO TIME CONSUMING; SKIPPED")
         return (0,0,0,0,0,0)
 
@@ -88,18 +88,20 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
         xml_str = xml_str.replace("son ins $90,000", "son is $90,000")
     if "for sale to customers is includible in the empoyee" in xml_str:
         xml_str = xml_str.replace("in the empoyee", "in the employee")
+    if "such difference included in gross income (ii)" in xml_str:
+        xml_str = xml_str.replace("in gross income (ii)", "in gross income. (ii)")
 
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 
     dual_indexes_tried = {}
-    min_working_idx_ellipsis = {}
+    fail_start_idx_ellipsis = {}
     result, num_recursive_calls = \
-        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, min_working_idx_ellipsis) # actual function call
+        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, fail_start_idx_ellipsis) # actual function call
 
     if not result:
         print("TREAS REG FAILURE", sec_num)
         utils.find_error(supp_str, xml_str)
-        # print("XML string:", xml_str)
+        print("XML string:", xml_str)
         # print("Raw XML:", ET.tostring(tr_sec)) # useful for debug
         # print("here")
     else:
@@ -107,7 +109,7 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
 
     return len(xml_str), len(supp_str), \
            num_recursive_calls, len(dual_indexes_tried), \
-           supp_str.count("…"), len(min_working_idx_ellipsis)
+           supp_str.count("…"), len(fail_start_idx_ellipsis)
 
 
 if __name__ == '__main__':

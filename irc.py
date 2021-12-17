@@ -62,21 +62,21 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
     # gather the XML text
     xml_str = utils.standardize(get_IRC_text_recursive(irc_sec))
     # print("Raw XML:", ET.tostring(irc_sec)) # useful for debug
-    # print("XML text: ", re.sub("\n\\s*\n", "\n", xml_str)) # useful for debug
     xml_str = " ".join(xml_str.split()) # normalize whitespace
 
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 
     dual_indexes_tried = {}
-    min_working_idx_ellipsis = {}
+    fail_start_idx_ellipsis = {}
     result, num_recursive_calls = \
-        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, min_working_idx_ellipsis) # actual function call
+        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, fail_start_idx_ellipsis) # actual function call
     if not result:
         print("IRC FAILURE", sec_num)
         utils.find_error(supp_str, xml_str)
+        print("XML string:", xml_str)
     else:
         print("IRC SUCCESS", sec_num)
 
     return len(xml_str), len(supp_str), \
            num_recursive_calls, len(dual_indexes_tried), \
-           supp_str.count("…"), len(min_working_idx_ellipsis)
+           supp_str.count("…"), len(fail_start_idx_ellipsis)
