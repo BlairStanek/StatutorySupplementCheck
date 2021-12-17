@@ -3,7 +3,7 @@
 import re
 import string
 
-hyphen_lookalikes_re = re.compile(r"[—–]") # em-dashes and en-dashes
+hyphen_lookalikes_re = re.compile(r"[−—–]") # em-dashes and en-dashes
 def standardize(s:str) -> str:
     rv = hyphen_lookalikes_re.sub("-", s).replace("--", "-")
     rv = rv.replace("“", "\"").replace("”", "\"").replace("’", "'").replace("‘", "'")
@@ -64,7 +64,7 @@ def recursive_match(supp_str:str, supp_idx_start:int,
                 num_recursive_calls += num_subcalls
 
                 dual_indexes_tried[relevant_tuple] = success # dynamic programming to avoid waste
-                if len(dual_indexes_tried) % 30000 == 0 and len(dual_indexes_tried) > 0:
+                if len(dual_indexes_tried) % 200000 == 0 and len(dual_indexes_tried) > 0:
                     print("  call", len(dual_indexes_tried))
             assert relevant_tuple in dual_indexes_tried, "Should have been handled"
             if dual_indexes_tried[relevant_tuple] == True:

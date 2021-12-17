@@ -51,6 +51,9 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
             irc_sec = s
             assert s.find("usc:num", ns).attrib["value"].lower() == sec_num.lower()
 
+    if irc_sec is None:
+        print("FAILED TO FIND SECTION:  ", sec_num, "   CANCELLING")
+
     # Check the title
     xml_heading_text = utils.standardize(irc_sec.find('usc:heading', ns).text.strip()).strip(".")
     supp_title_text = supp_title_text.strip().strip(".")

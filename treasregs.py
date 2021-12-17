@@ -92,7 +92,7 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
         xml_str = xml_str.replace("in gross income (ii)", "in gross income. (ii)")
     if "Capitalization with respect to intangible s" in xml_str:
         xml_str = xml_str.replace("to intangible s", "to intangibles")
-    if sec_num == "1.263(a)-3":
+    if sec_num == "1.263(a)-3" or sec_num == "1.362-4" or sec_num == "1.336-2" or sec_num == "1.355-2":
         for i in range(1,10):
             xml_str = xml_str.replace("( " + str(i)+ " )", "(" + str(i)+ ")")
 

@@ -7,10 +7,15 @@ import re
 import irc, treasregs, utils
 
 special_treatment_starts = ["Chapter",
+                            "Unit",
+                            "REDO",
+                            "Page",
                             "State and Local Bond Interest",
                             "Revenue Procedure 2021-45",
                             "§ 3.16 Standard Deduction",
                             "§ 3.17.",
+                            "§ 251. Merger or consolidation",
+                            "Delaware General Corporation Law",
                             "Prop. Reg."]  # alas, proposed regs aren't in the CFR
 
 
