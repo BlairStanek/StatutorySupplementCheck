@@ -38,8 +38,17 @@ print("")
 # sort the filenames numerically
 tr_roots.sort(key=lambda x: int(re.search("vol([1-9][0-9]?)[.]", x[1])[1]))
 
+debug_call_info = []
 
-def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list):
+
+# Returns a tuple of length of XML, length of Supp, number of recursive calls,
+# number of dynamic programming entries, number of ellipses
+def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int, int, int):
+
+    if sec_num.startswith("1.263(a)-"):
+        print("SECTION TOO TIME CONSUMING; SKIPPED")
+        return (0,0,0,0,0)
+
     sec_num = utils.standardize(sec_num)
     print("-----------------------------------\nSection:", sec_num)
     tr_sec = None
@@ -58,7 +67,7 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list):
 
     if tr_sec is None:
         print("FAILED TO MATCH: ", sec_num, supp_title_text)
-        return False
+        return (0,0,0,0,0)
 
     # Check the title
     xml_heading_text = utils.standardize(tr_sec.find('SUBJECT').text).strip().strip(".")
@@ -82,8 +91,11 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list):
 
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 
-    stored_results = {}
-    result = utils.recursive_match(supp_str, 0, xml_str, 0, stored_results) # actual function call
+    dual_indexes_tried = {}
+    max_working_idx_ellipses = {}
+    result, num_recursive_calls = \
+        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, max_working_idx_ellipses) # actual function call
+
     if not result:
         print("TREAS REG FAILURE", sec_num)
         utils.find_error(supp_str, xml_str)
@@ -92,6 +104,9 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list):
         # print("here")
     else:
         print("TREAS REG SUCCESS", sec_num)
+
+    return len(xml_str), len(supp_str), \
+           num_recursive_calls, len(dual_indexes_tried), supp_str.count("…")
 
 
 if __name__ == '__main__':

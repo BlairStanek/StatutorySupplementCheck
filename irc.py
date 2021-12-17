@@ -67,10 +67,15 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
 
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 
-    stored_results = {}
-    result = utils.recursive_match(supp_str, 0, xml_str, 0, stored_results) # actual function call
+    dual_indexes_tried = {}
+    max_working_idx_ellipses = {}
+    result, num_recursive_calls = \
+        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, max_working_idx_ellipses) # actual function call
     if not result:
         print("IRC FAILURE", sec_num)
         utils.find_error(supp_str, xml_str)
     else:
         print("IRC SUCCESS", sec_num)
+
+    return len(xml_str), len(supp_str), \
+           num_recursive_calls, len(dual_indexes_tried), supp_str.count("…")

@@ -8,10 +8,10 @@ def standardize(s:str) -> str:
     rv = rv.replace("“", "\"").replace("”", "\"").replace("’", "'").replace("‘", "'")
     return " ".join(rv.split())
 
-
-
 def recursive_match(supp_str:str, supp_idx_start:int,
-                        xml_str:str, xml_idx_start:int, stored_results:dict) -> bool:
+                        xml_str:str, xml_idx_start:int, 
+                        dual_indexes_tried:dict, min_working_idx_ellipsis:dict) -> (bool, int):
+    num_recursive_calls = 1 # will be returned; used for performance and debug
 
     supp_idx = supp_idx_start
     xml_idx = xml_idx_start
@@ -23,9 +23,9 @@ def recursive_match(supp_str:str, supp_idx_start:int,
         #     assert True
 
         if supp_idx == len(supp_str) and xml_idx == len(xml_str):
-            return True # then we have matched
+            return True, num_recursive_calls # then we have matched
         elif supp_idx == len(supp_str) or xml_idx == len(xml_str):
-            return False # then only one matched
+            return False, num_recursive_calls # then only one matched
         if supp_str[supp_idx] == xml_str[xml_idx]: # exact match => advance both
             supp_idx += 1
             xml_idx += 1
@@ -58,16 +58,31 @@ def recursive_match(supp_str:str, supp_idx_start:int,
         supp_idx += 1 # skip over ellipsis
         if supp_str[supp_idx:supp_idx+1].isspace():
             supp_idx += 1 # skip over spaces after ellipses
-        for i in range(xml_idx+2, len(xml_str)+1): # we consider the end of string, hence the +1
-            relevant_tuple = (supp_idx, i)
-            if relevant_tuple not in stored_results:
-                success = recursive_match(supp_str, supp_idx, xml_str, i, stored_results)
-                stored_results[relevant_tuple] = success
-            assert relevant_tuple in stored_results, "Should have been handled"
-            if stored_results[relevant_tuple] == True:
-                return True
 
-    return False # we couldn't find a good match
+        for i in range(xml_idx+2,len(xml_str)+1): # we potentially consider the end of string for a match, hence the +1
+            relevant_tuple = (supp_idx, i)
+            if relevant_tuple not in dual_indexes_tried:
+                success, num_subcalls = \
+                    recursive_match(supp_str, supp_idx, xml_str, i, dual_indexes_tried, min_working_idx_ellipsis)
+
+                # if success and i > max_i_success: # store the success, so we can avoid failures later
+                #     max_i_success = i
+
+                num_recursive_calls += num_subcalls
+
+                dual_indexes_tried[relevant_tuple] = success # dynamic programming to avoid waste
+                if len(dual_indexes_tried) % 10000 == 0 and len(dual_indexes_tried) > 0:
+                    print("  call", len(dual_indexes_tried))
+            assert relevant_tuple in dual_indexes_tried, "Should have been handled"
+            if dual_indexes_tried[relevant_tuple] == True:
+                # store this success (type of dynamic programming)
+                if supp_idx not in min_working_idx_ellipsis or \
+                        i < min_working_idx_ellipsis[supp_idx]:
+                    min_working_idx_ellipsis[supp_idx] = i
+
+                return True, num_recursive_calls
+
+    return False, num_recursive_calls # we couldn't find a good match
 
 
 
@@ -77,8 +92,8 @@ def find_error(supp_str:str, xml_str:str):
     while idx_known_good < idx_known_bad-1:
         print("Searching for Error,  idx_known_good=", idx_known_good, " idx_known_bad=",idx_known_bad)
         idx_to_try = int((idx_known_good+idx_known_bad)/2) # basically binary search
-        stored_results = {}
-        success = recursive_match(supp_str[:idx_to_try]+"…", 0, xml_str, 0, stored_results)
+        dual_indexes_tried = {}
+        success = recursive_match(supp_str[:idx_to_try]+"…", 0, xml_str, 0, dual_indexes_tried)
         if success:
             idx_known_good = idx_to_try
         else:
