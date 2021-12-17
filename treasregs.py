@@ -45,9 +45,9 @@ debug_call_info = []
 # number of dynamic programming entries, number of ellipses
 def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int, int, int):
 
-    if  sec_num.startswith("1.263(a)-"):
-        print("SECTION TOO TIME CONSUMING; SKIPPED")
-        return (0,0,0,0,0,0)
+    # if not sec_num.startswith("1.263(a)-"):
+    #     print("SECTION TOO TIME CONSUMING; SKIPPED")
+    #     return (0,0,0,0,0,0)
 
     sec_num = utils.standardize(sec_num)
     print("-----------------------------------\nSection:", sec_num)
@@ -90,6 +90,11 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
         xml_str = xml_str.replace("in the empoyee", "in the employee")
     if "such difference included in gross income (ii)" in xml_str:
         xml_str = xml_str.replace("in gross income (ii)", "in gross income. (ii)")
+    if "Capitalization with respect to intangible s" in xml_str:
+        xml_str = xml_str.replace("to intangible s", "to intangibles")
+    if sec_num == "1.263(a)-3":
+        for i in range(1,10):
+            xml_str = xml_str.replace("( " + str(i)+ " )", "(" + str(i)+ ")")
 
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 

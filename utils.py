@@ -49,15 +49,14 @@ def recursive_match(supp_str:str, supp_idx_start:int,
         if supp_str[supp_idx:supp_idx+1].isspace():
             supp_idx += 1 # skip over spaces after ellipses
 
-        idx_fail_start = None
-        # we check to see if this ellipses has been successfully handled
-        # already.  If so, just return.  This is dynamic programming.
+        i_start = xml_idx+1
+        i_end = len(xml_str)+1 # we potentially consider the end of string for a match, hence the +1
         if supp_idx in fail_start_idx_ellipsis:
-            print("We have one")
-            if xml_idx+1 <= fail_start_idx_ellipsis[supp_idx]:
-                return True, num_recursive_calls
+            # then we have previously tried matching this ellipses up with at
+            # least some part of the remaining string, so don't try that
+            i_end = fail_start_idx_ellipsis[supp_idx]
 
-        for i in range(xml_idx+2,len(xml_str)+1): # we potentially consider the end of string for a match, hence the +1
+        for i in range(i_start, i_end):
             relevant_tuple = (supp_idx, i)
             if relevant_tuple not in dual_indexes_tried:
                 success, num_subcalls = \
@@ -65,17 +64,14 @@ def recursive_match(supp_str:str, supp_idx_start:int,
                 num_recursive_calls += num_subcalls
 
                 dual_indexes_tried[relevant_tuple] = success # dynamic programming to avoid waste
-                # if len(dual_indexes_tried) % 10000 == 0 and len(dual_indexes_tried) > 0:
-                #     print("  call", len(dual_indexes_tried))
+                if len(dual_indexes_tried) % 30000 == 0 and len(dual_indexes_tried) > 0:
+                    print("  call", len(dual_indexes_tried))
             assert relevant_tuple in dual_indexes_tried, "Should have been handled"
             if dual_indexes_tried[relevant_tuple] == True:
                 return True, num_recursive_calls
         # since we are here, all attempts failed, so store if relevant
         # (this is dynamic programming)
-        # if fail_start_idx_ellipsis
-        # xml_idx
-
-
+        fail_start_idx_ellipsis[supp_idx] = i_start
 
     return False, num_recursive_calls # we couldn't find a good match
 

@@ -25,7 +25,7 @@ def check_lines(in_lines:list, perf_data:list):
         sec_num = sec_num[:-1] # remove the period if present
 
     if True in [lines[0].startswith(s) for s in special_treatment_starts]:
-        print("Special treatment")
+        print("---- Special treatment:", lines[0])
     elif "-" in sec_num:
         perf_tuple = treasregs.check_TreasReg(sec_num, supp_title_text, lines)
         perf_data.append((sec_num, perf_tuple))
@@ -41,7 +41,6 @@ current_in_lines = None # Don't store anything until we find a section
 for idx_l, l in enumerate(f.readlines()):
 
     if l[0] == "§" or True in [l.startswith(s) for s in special_treatment_starts]:  # Found a start of a section
-        print("----- At Line", idx_l)
         if current_in_lines is not None:
             check_lines(current_in_lines, perf_data) # process prior section
         current_in_lines = [l] # reset and start gathering
