@@ -59,6 +59,14 @@ def recursive_match(supp_str:str, supp_idx_start:int,
         if supp_str[supp_idx:supp_idx+1].isspace():
             supp_idx += 1 # skip over spaces after ellipses
 
+        # we check to see if this ellipses has been successfully handled
+        # already.  If so, just return.  This is dynamic programming.
+        print("supp_idx=", supp_idx, "min_working_idx_ellipsis=", min_working_idx_ellipsis)
+        if supp_idx in min_working_idx_ellipsis:
+            print("We have one")
+            if xml_idx+2 <= min_working_idx_ellipsis[supp_idx]:
+                return True, num_recursive_calls
+
         for i in range(xml_idx+2,len(xml_str)+1): # we potentially consider the end of string for a match, hence the +1
             relevant_tuple = (supp_idx, i)
             if relevant_tuple not in dual_indexes_tried:

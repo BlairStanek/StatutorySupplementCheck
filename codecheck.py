@@ -50,8 +50,8 @@ for idx_l, l in enumerate(f.readlines()):
 check_lines(current_in_lines, perf_data) # handle the final section
 
 for sec_num, perf_tuple in perf_data:
-    print("{:10s} {:7.3f} {:6d} {:6d} {:6d} {:6d} {:6d}".format(sec_num,
+    print("{:10s} {:7.3f} {:6d} {:6d} {:6d} {:6d} {:6d} {:6d}".format(sec_num,
                                                                 (perf_tuple[3]/float(perf_tuple[0]+0.0001)), \
                                                             perf_tuple[0], \
                                                            perf_tuple[1], perf_tuple[2],
-                                                           perf_tuple[3], perf_tuple[4]))
+                                                           perf_tuple[3], perf_tuple[4], perf_tuple[5]))

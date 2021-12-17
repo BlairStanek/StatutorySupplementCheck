@@ -45,9 +45,9 @@ debug_call_info = []
 # number of dynamic programming entries, number of ellipses
 def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int, int, int):
 
-    if sec_num.startswith("1.263(a)-"):
+    if not sec_num.startswith("1.263(a)-"):
         print("SECTION TOO TIME CONSUMING; SKIPPED")
-        return (0,0,0,0,0)
+        return (0,0,0,0,0,0)
 
     sec_num = utils.standardize(sec_num)
     print("-----------------------------------\nSection:", sec_num)
@@ -67,7 +67,7 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
 
     if tr_sec is None:
         print("FAILED TO MATCH: ", sec_num, supp_title_text)
-        return (0,0,0,0,0)
+        return (0,0,0,0,0,0)
 
     # Check the title
     xml_heading_text = utils.standardize(tr_sec.find('SUBJECT').text).strip().strip(".")
@@ -92,9 +92,9 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
     supp_str = utils.process_supp_lines(in_lines, sec_num)
 
     dual_indexes_tried = {}
-    max_working_idx_ellipses = {}
+    min_working_idx_ellipsis = {}
     result, num_recursive_calls = \
-        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, max_working_idx_ellipses) # actual function call
+        utils.recursive_match(supp_str, 0, xml_str, 0, dual_indexes_tried, min_working_idx_ellipsis) # actual function call
 
     if not result:
         print("TREAS REG FAILURE", sec_num)
@@ -106,7 +106,8 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
         print("TREAS REG SUCCESS", sec_num)
 
     return len(xml_str), len(supp_str), \
-           num_recursive_calls, len(dual_indexes_tried), supp_str.count("…")
+           num_recursive_calls, len(dual_indexes_tried), \
+           supp_str.count("…"), len(min_working_idx_ellipsis)
 
 
 if __name__ == '__main__':
