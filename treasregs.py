@@ -118,18 +118,35 @@ def check_TreasReg(sec_num:str, supp_title_text:str, in_lines:list) -> (int, int
 
 
 if __name__ == '__main__':
-    sect_count = 0
+    print("Counting number of words and sections in Treas Regs")
+    section_count = 0 # only counts non-reserved sections
+    word_count = 0
+    reserved_count = 0 # number of sections listed as reserved
     for idx, (r, filename) in enumerate(tr_roots):
-        if "vol3." in filename: # debug
-            print(idx, filename)
-            content = r.find("TITLE")
-            for s in content.iter('SECTION'):
-                if s.find("SECTNO") is not None:
-                    print(s.find("SECTNO").text, end=" ")
-                    sect_count += 1
-                if s.find("SUBJECT") is not None:
-                    print(s.find("SUBJECT").text, end=" ")
-                # print("Raw XML:", ET.tostring(s)) # useful for debug
-                print(get_TR_text_recursive(s))
-    print("Total sections =", sect_count)
+        print("******************", idx, filename)
+        content = r.find("TITLE")
+        for s in content.iter('SECTION'):
+            # if s.find("SUBJECT") is not None:
+            #     print(s.find("SUBJECT").text, end=" ")
+            if s.find("RESERVED") is not None:
+                reserved_count += 1
+            elif s.find("SECTNO") is not None:
+                print(s.find("SECTNO").text)
+                section_count += 1
+                section_title = utils.standardize(s.find('SUBJECT').text).strip().strip(".")
+                word_count += len(section_title.split())
+                section_text = utils.standardize(get_TR_text_recursive(s))
+                word_count += len(section_text.split())
+                # The code below is used to print out a single section's text and stats.
+                # If you paste the printed text into a Microsoft Word document, you see
+                # that the word counts match.
+                if s.find("SECTNO").text[2:] == "1.61-2":
+                    print(section_title)
+                    print("Got total", len(section_title.split()))
+                    print(section_text)
+                    print("Got total", len(section_text.split()))
+
+    print("Total sections =", section_count)
+    print("Total reserved sections =", reserved_count)
+    print("Total words =", word_count)
 

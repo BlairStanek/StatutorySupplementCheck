@@ -83,3 +83,55 @@ def check_IRC(sec_num:str, supp_title_text:str, in_lines:list):
     return len(xml_str), len(supp_str), \
            num_recursive_calls, len(dual_indexes_tried), \
            supp_str.count("…"), len(fail_start_idx_ellipsis)
+
+
+if __name__ == '__main__':
+    print("Counting number of words and sections in IRC")
+    section_count = 0 # only counts non-reserved sections
+    sections_without_heading = 0
+    sections_without_identifier = 0
+    word_count = 0
+    word_count_sections_without_heading = 0
+    word_count_sections_without_identifier = 0
+    last_named_section = "None"
+    for s in irc_root.iter('{' + usc_ns_str + '}section'):
+        section_count += 1
+        section_text = utils.standardize(get_IRC_text_recursive(s))
+        word_count += len(section_text.split())
+
+        # The code below is used to print out a single section's text and stats.
+        # If you paste the printed text into a Microsoft Word document, you see
+        # that the word counts match.
+        if "identifier" in s.attrib and \
+                s.attrib["identifier"].lower() == "/us/usc/t26/s61":
+            print("***********************************")
+            print(section_text)
+            print("Got total", len(section_text.split()))
+            print("***********************************")
+
+        if s.find('usc:heading', ns) is None:
+            # There are some weird sections that seem to be statutes passed by Congress relating
+            # to the IRC that appear in the XML as sections, but are not actual sections.  They
+            # seem like they should have been put as notes at the end of sections, but were not.
+            sections_without_heading += 1
+            word_count_sections_without_heading += len(section_text.split())
+            print("After", last_named_section, ", a no-heading section")
+        else: # these are the normal sections
+            title_text = utils.standardize(s.find('usc:heading', ns).text.strip()).strip(".")
+            word_count += len(title_text.split())
+            if "identifier" not in s.attrib:
+                sections_without_identifier += 1
+                word_count_sections_without_identifier += len(section_text.split()) + len(title_text.split())
+                print("After", last_named_section, ", a no-identifier section")
+            else:
+                assert s.attrib["identifier"].startswith("/us/usc/t26/")
+                last_named_section = s.attrib["identifier"][len("/us/usc/t26/"):]
+
+    print("Total sections =", section_count)
+    print("Total words =", word_count)
+    print("Total sections without heading =", sections_without_heading)
+    print("Total words in sections without heading =", word_count_sections_without_heading)
+    print("Total sections without identifier =", sections_without_identifier)
+    print("Total words in sections without identifier =", word_count_sections_without_identifier)
+
+
