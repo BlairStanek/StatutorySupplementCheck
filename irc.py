@@ -133,5 +133,3 @@ if __name__ == '__main__':
     print("Total words in sections without heading =", word_count_sections_without_heading)
     print("Total sections without identifier =", sections_without_identifier)
     print("Total words in sections without identifier =", word_count_sections_without_identifier)
-
-

@@ -12,11 +12,13 @@ special_treatment_starts = ["Chapter",
                             "Page",
                             "State and Local Bond Interest",
                             "Revenue Procedure 2021-45",
+                            "Revenue Procedure 2022-38",
                             "§ 3.16 Standard Deduction",
+                            "§ 3.15 Standard Deduction",
                             "§ 3.17.",
                             "§ 251. Merger or consolidation",
                             "Delaware General Corporation Law",
-                            "Prop. Reg."]  # alas, proposed regs aren't in the CFR
+                            "Prop. Reg."]  # alas, proposed regs aren't in the XML version of the CFR
 
 
 # This manages the work of verifying that the title and text matches
